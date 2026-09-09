@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OCR Loading Animation</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    /* ---- Container ---- */
+    .scene {
+      position: relative;
+      width: 220px;
+      height: 280px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ---- Receipt SVG ---- */
+    .receipt-wrap {
+      position: absolute;
+      animation: receiptFloat 3s ease-in-out infinite;
+    }
+
+    @keyframes receiptFloat {
+      0%, 100% { transform: translateY(0px) rotate(-2deg); }
+      50%       { transform: translateY(-10px) rotate(2deg); }
+    }
+
+    /* ---- Scan line ---- */
+    .scan-line {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90px;
+      height: 3px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, transparent, #6C63FF, #A78BFA, #6C63FF, transparent);
+      box-shadow: 0 0 12px 4px rgba(108, 99, 255, 0.6);
+      animation: scanMove 2s ease-in-out infinite;
+      opacity: 0;
+    }
+
+    @keyframes scanMove {
+      0%   { top: -8px;  opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 1; }
+      100% { top: 168px; opacity: 0; }
+    }
+
+    /* ---- Stars / sparkles ---- */
+    .star {
+      position: absolute;
+      opacity: 0;
+      animation: sparkle var(--dur, 1.6s) ease-in-out infinite var(--delay, 0s);
+    }
+
+    .star svg { display: block; }
+
+    @keyframes sparkle {
+      0%   { opacity: 0; transform: scale(0) rotate(0deg); }
+      40%  { opacity: 1; transform: scale(1) rotate(20deg); }
+      70%  { opacity: 0.8; }
+      100% { opacity: 0; transform: scale(0.5) rotate(60deg); }
+    }
+
+    /* ---- AI brain pulse ---- */
+    .brain-ring {
+      position: absolute;
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      border: 2px solid rgba(108, 99, 255, 0.25);
+      animation: ringPulse 2.4s ease-out infinite;
+    }
+    .brain-ring:nth-child(2) { animation-delay: 0.8s; }
+    .brain-ring:nth-child(3) { animation-delay: 1.6s; }
+
+    @keyframes ringPulse {
+      0%   { transform: scale(0.6); opacity: 0.8; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+
+    /* ---- Label ---- */
+    .label {
+      margin-top: 16px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #7C73E6;
+      letter-spacing: 0.04em;
+      opacity: 0;
+      animation: labelCycle 15s ease-in-out infinite;
+      text-align: center;
+      height: 18px;
+    }
+
+    @keyframes labelCycle {
+      0%      { opacity: 0; }
+      2%      { opacity: 1; }
+      18%     { opacity: 1; }
+      20%     { opacity: 0; }
+      100%    { opacity: 0; }
+    }
+
+    .label-2 { animation-delay: 3s; }
+    .label-3 { animation-delay: 6s; }
+    .label-4 { animation-delay: 9s; }
+    .label-5 { animation-delay: 12s; }
+
+    /* Step phases control scan + receipt color */
+    /* Phase 1 0–3s  : scan violet standard */
+    /* Phase 2 3–6s  : scan turquoise (extraction texte) */
+    /* Phase 3 6–9s  : scan rose (IA) */
+    /* Phase 4 9–12s : résultats */
+
+    .scan-line.phase2 {
+      animation: scanMove 2s ease-in-out infinite 3s;
+      background: linear-gradient(90deg, transparent, #06B6D4, #67E8F9, #06B6D4, transparent);
+      box-shadow: 0 0 12px 4px rgba(6,182,212,0.6);
+      opacity: 0;
+    }
+    .scan-line.phase3 {
+      animation: scanMove 2s ease-in-out infinite 6s;
+      background: linear-gradient(90deg, transparent, #EC4899, #F9A8D4, #EC4899, transparent);
+      box-shadow: 0 0 12px 4px rgba(236,72,153,0.6);
+      opacity: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Labels cycling through steps -->
+  <div style="position:relative; height:18px; width:240px; text-align:center; margin-bottom:8px;">
+    <div class="label" style="position:absolute;width:100%;left:0;">Lecture du document...</div>
+    <div class="label label-2" style="position:absolute;width:100%;left:0;">Extraction du texte...</div>
+    <div class="label label-3" style="position:absolute;width:100%;left:0;">Analyse par IA...</div>
+    <div class="label label-4" style="position:absolute;width:100%;left:0;">Détection des champs...</div>
+    <div class="label label-5" style="position:absolute;width:100%;left:0;">Finalisation...</div>
+  </div>
+
+  <div class="scene">
+
+    <!-- Pulse rings behind receipt -->
+    <div class="brain-ring"></div>
+    <div class="brain-ring"></div>
+    <div class="brain-ring"></div>
+
+    <!-- Receipt SVG -->
+    <div class="receipt-wrap">
+      <svg width="110" height="160" viewBox="0 0 110 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Receipt body -->
+        <rect x="5" y="5" width="100" height="148" rx="8" fill="white" fill-opacity="0.95"
+              stroke="#E0DAFF" stroke-width="1.5"/>
+        <!-- Zigzag bottom -->
+        <path d="M5 145 Q11 155 17 145 Q23 135 29 145 Q35 155 41 145 Q47 135 53 145 Q59 155 65 145 Q71 135 77 145 Q83 155 89 145 Q95 135 101 145 Q107 155 105 153 L105 153 L5 153 Z"
+              fill="white" fill-opacity="0.95"/>
+        <!-- Lines -->
+        <rect x="18" y="22" width="50" height="6" rx="3" fill="#C4B5FD"/>
+        <rect x="18" y="35" width="70" height="4" rx="2" fill="#EDE9FE"/>
+        <rect x="18" y="46" width="60" height="4" rx="2" fill="#EDE9FE"/>
+        <rect x="18" y="57" width="65" height="4" rx="2" fill="#EDE9FE"/>
+        <!-- Separator -->
+        <line x1="15" y1="68" x2="95" y2="68" stroke="#E0DAFF" stroke-width="1" stroke-dasharray="4 3"/>
+        <!-- Price lines -->
+        <rect x="18" y="76" width="40" height="4" rx="2" fill="#DDD6FE"/>
+        <rect x="72" y="76" width="22" height="4" rx="2" fill="#A78BFA"/>
+        <rect x="18" y="87" width="35" height="4" rx="2" fill="#EDE9FE"/>
+        <rect x="72" y="87" width="22" height="4" rx="2" fill="#C4B5FD"/>
+        <rect x="18" y="98" width="45" height="4" rx="2" fill="#EDE9FE"/>
+        <rect x="72" y="98" width="22" height="4" rx="2" fill="#C4B5FD"/>
+        <!-- Total -->
+        <line x1="15" y1="110" x2="95" y2="110" stroke="#E0DAFF" stroke-width="1.5"/>
+        <rect x="18" y="118" width="30" height="6" rx="3" fill="#8B5CF6"/>
+        <rect x="68" y="118" width="26" height="6" rx="3" fill="#6C63FF"/>
+        <!-- Barcode -->
+        <rect x="22" y="130" width="3" height="10" rx="1" fill="#DDD6FE"/>
+        <rect x="27" y="130" width="2" height="10" rx="1" fill="#DDD6FE"/>
+        <rect x="31" y="130" width="4" height="10" rx="1" fill="#DDD6FE"/>
+        <rect x="37" y="130" width="2" height="10" rx="1" fill="#DDD6FE"/>
+        <rect x="41" y="130" width="3" height="10" rx="1" fill="#DDD6FE"/>
+        <rect x="46" y="130" width="2" height="10" rx="1" fill="#DDD6FE"/>
+        <rect x="50" y="130" width="4" height="10" rx="1" fill="#DDD6FE"/>
+        <rect x="56" y="130" width="2" height="10" rx="1" fill="#DDD6FE"/>
+        <rect x="60" y="130" width="3" height="10" rx="1" fill="#DDD6FE"/>
+        <rect x="65" y="130" width="2" height="10" rx="1" fill="#DDD6FE"/>
+        <rect x="69" y="130" width="4" height="10" rx="1" fill="#DDD6FE"/>
+        <rect x="75" y="130" width="2" height="10" rx="1" fill="#DDD6FE"/>
+        <rect x="79" y="130" width="3" height="10" rx="1" fill="#DDD6FE"/>
+        <rect x="84" y="130" width="2" height="10" rx="1" fill="#DDD6FE"/>
+      </svg>
+
+      <!-- Scan line overlay (phase 1 – violet) -->
+      <div class="scan-line" style="top:30px;"></div>
+    </div>
+
+    <!-- Stars / sparkles -->
+    <!-- Top-left -->
+    <div class="star" style="top:20px; left:20px; --dur:2.2s; --delay:0.3s;">
+      <svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 2l1.5 6h6l-5 3.5 1.9 6L12 14l-4.4 3.5 1.9-6L4.5 8h6z" fill="#A78BFA"/></svg>
+    </div>
+    <!-- Top-right -->
+    <div class="star" style="top:15px; right:22px; --dur:1.8s; --delay:0.8s;">
+      <svg width="12" height="12" viewBox="0 0 24 24"><path d="M12 2l1.5 6h6l-5 3.5 1.9 6L12 14l-4.4 3.5 1.9-6L4.5 8h6z" fill="#C4B5FD"/></svg>
+    </div>
+    <!-- Right -->
+    <div class="star" style="top:90px; right:10px; --dur:2.0s; --delay:1.1s;">
+      <svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 2l1.5 6h6l-5 3.5 1.9 6L12 14l-4.4 3.5 1.9-6L4.5 8h6z" fill="#818CF8"/></svg>
+    </div>
+    <!-- Bottom-left -->
+    <div class="star" style="bottom:30px; left:18px; --dur:1.9s; --delay:0.2s;">
+      <svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 2l1.5 6h6l-5 3.5 1.9 6L12 14l-4.4 3.5 1.9-6L4.5 8h6z" fill="#C4B5FD"/></svg>
+    </div>
+    <!-- Bottom-right -->
+    <div class="star" style="bottom:40px; right:25px; --dur:2.4s; --delay:0.6s;">
+      <svg width="10" height="10" viewBox="0 0 24 24"><path d="M12 2l1.5 6h6l-5 3.5 1.9 6L12 14l-4.4 3.5 1.9-6L4.5 8h6z" fill="#7C3AED"/></svg>
+    </div>
+    <!-- Left -->
+    <div class="star" style="top:120px; left:12px; --dur:2.1s; --delay:1.4s;">
+      <svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 2l1.5 6h6l-5 3.5 1.9 6L12 14l-4.4 3.5 1.9-6L4.5 8h6z" fill="#A78BFA"/></svg>
+    </div>
+
+    <!-- 4-point diamond sparkles -->
+    <div class="star" style="top:50px; left:10px; --dur:1.5s; --delay:0.5s;">
+      <svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 2L14 10L22 12L14 14L12 22L10 14L2 12L10 10Z" fill="#DDD6FE"/></svg>
+    </div>
+    <div class="star" style="bottom:60px; right:15px; --dur:1.7s; --delay:1.0s;">
+      <svg width="12" height="12" viewBox="0 0 24 24"><path d="M12 2L14 10L22 12L14 14L12 22L10 14L2 12L10 10Z" fill="#C4B5FD"/></svg>
+    </div>
+    <div class="star" style="top:160px; left:24px; --dur:2.3s; --delay:0.0s;">
+      <svg width="10" height="10" viewBox="0 0 24 24"><path d="M12 2L14 10L22 12L14 14L12 22L10 14L2 12L10 10Z" fill="#818CF8"/></svg>
+    </div>
+
+  </div>
+
+</body>
+</html>
